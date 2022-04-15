@@ -1,4 +1,5 @@
-﻿using Autodesk.Revit.DB;
+﻿using Autodesk.Revit.ApplicationServices;
+using Autodesk.Revit.DB;
 using Autodesk.Revit.DB.Structure;
 using System;
 using System.Collections.Generic;
@@ -44,6 +45,8 @@ namespace CreationModelPlugin
             CreateWindow(doc, level1, walls[1]);
             CreateWindow(doc, level1, walls[2]);
             CreateWindow(doc, level1, walls[3]);
+            // Построение крыши
+            CreateRoof(doc, level2, walls);
             transaction.Commit();
         }
         #endregion
@@ -76,6 +79,45 @@ namespace CreationModelPlugin
             Parameter sillHeight = window.get_Parameter(BuiltInParameter.INSTANCE_SILL_HEIGHT_PARAM);
             double sh = UnitUtils.ConvertToInternalUnits(900, UnitTypeId.Millimeters);
             sillHeight.Set(sh);
+        }
+        #endregion
+
+        #region Создание крыши
+        private static void CreateRoof(Document doc, Level level2, List<Wall> walls)
+        {
+            var roofType = SelObjModel.SelectRoof(doc);
+            double wallWidth = walls[0].Width;
+            double dw = wallWidth / 2;
+            List<XYZ> points = new List<XYZ>();
+            points.Add(new XYZ(-dw, -dw, 0));
+            points.Add(new XYZ(dw, -dw, 0));
+            points.Add(new XYZ(dw, dw, 0));
+            points.Add(new XYZ(-dw, dw, 0));
+            points.Add(new XYZ(-dw, -dw, 0));
+
+            Application application = doc.Application;
+            CurveArray footprint = application.Create.NewCurveArray();
+            for (int i = 0; i < 4; i++)
+            {
+                LocationCurve curve = walls[i].Location as LocationCurve;
+                XYZ p1 = curve.Curve.GetEndPoint(0);
+                XYZ p2 = curve.Curve.GetEndPoint(1);
+                Line line = Line.CreateBound(p1 + points[i], p2 + points[i + 1]);
+                footprint.Append(line);
+            }
+            /*ModelCurveArray footPrintToModelCurveMapping = new ModelCurveArray();
+            FootPrintRoof footprintRoof = doc.Create.NewFootPrintRoof(footprint, level2, roofType, out footPrintToModelCurveMapping);
+            foreach (ModelCurve m in footPrintToModelCurveMapping)
+            {
+                footprintRoof.set_DefinesSlope(m, true);
+                footprintRoof.set_SlopeAngle(m, 0.5);
+            }
+            */
+            CurveArray curveArray = new CurveArray();
+            curveArray.Append(Line.CreateBound(new XYZ(-16.73, -8.53, 13.12), new XYZ(-16.73, 0, 19.69)));
+            curveArray.Append(Line.CreateBound(new XYZ(-16.73, 0, 19.69), new XYZ(-16.73, 8.53, 13.12)));
+            ReferencePlane plane = doc.Create.NewReferencePlane(new XYZ(0, 0, 0), new XYZ(0, 0, 20), new XYZ(0, 20, 0), doc.ActiveView);
+            doc.Create.NewExtrusionRoof(curveArray, plane, level2, roofType, -16.73, 16.73);
         }
         #endregion
     }

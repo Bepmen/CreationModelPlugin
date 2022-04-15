@@ -53,5 +53,18 @@ namespace CreationModelPlugin
             return winType;
         }
         #endregion
+
+        #region Выбор крыши
+        public static RoofType SelectRoof(Document doc)
+        {
+            RoofType roofType = new FilteredElementCollector(doc)
+                 .OfClass(typeof(RoofType))
+                 .OfType<RoofType>()
+                 .Where(x => x.Name.Equals("Типовой - 400мм"))
+                 .Where(x => x.FamilyName.Equals("Базовая крыша"))
+                 .FirstOrDefault();
+            return roofType;
+        }
+        #endregion
     }
 }
