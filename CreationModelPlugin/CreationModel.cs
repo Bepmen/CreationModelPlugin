@@ -17,10 +17,10 @@ namespace CreationModelPlugin
             Document doc = commandData.Application.ActiveUIDocument.Document;
 
             Level level1, level2;
-            
-            SelObjModel.SelectLevels(doc, out level1, out level2);
 
-            CreatObjMod.CreateWalls(doc, level1, level2);
+            SelObjModel.SelectLevels(doc, out level1, out level2);
+            
+            CreatObjMod.CreateObj(doc, level1, level2);
 
             return Result.Succeeded;
 
